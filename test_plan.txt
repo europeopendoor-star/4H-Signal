@@ -1,0 +1,6 @@
+I will write the new index.html completely. It will include:
+- Head with Google Fonts
+- CSS matching the design system
+- App layout with topbar, left sidebar, main content, right panel
+- All sections based on prompt instructions
+- JS maintaining all logic and variables (SUPABASE_URL, etc.), and mapping to new IDs
