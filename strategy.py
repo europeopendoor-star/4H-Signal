@@ -11,6 +11,7 @@ from typing import Optional, List, Dict, Any
 import pandas as pd
 import numpy as np
 from datetime import datetime, timezone
+import news_filter
 
 class Direction(Enum):
     BULLISH = "bullish"

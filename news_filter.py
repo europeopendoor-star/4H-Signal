@@ -6,6 +6,8 @@ signals from firing within 30 minutes before or after these events.
 """
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import requests
 from datetime import datetime, timezone, timedelta
 from typing import List, Dict, Tuple

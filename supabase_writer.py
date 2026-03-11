@@ -39,6 +39,8 @@ CREATE POLICY "public read" ON bot_status FOR SELECT USING (true);
 """
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import json
 import requests
 from datetime import datetime, timezone, timedelta
