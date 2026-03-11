@@ -342,7 +342,7 @@
         <li>Go to <b>supabase.com</b> and create a free project.</li>
         <li>In SQL Editor, run the table creation SQL (found in <span class="mono">supabase_writer.py</span>).</li>
         <li>Go to Settings → API and copy your Project URL & anon key.</li>
-        <li>Replace <span class="mono">YOUR_SUPABASE_URL</span> and <span class="mono">YOUR_SUPABASE_ANON_KEY</span> in this HTML file's config section.</li>
+        <li>Replace <span class="mono">https://wiwjptnjfrkxzrffiqlh.supabase.co</span> and <span class="mono">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpd2pwdG5qZnJreHpyZmZpcWxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MTc3MzIsImV4cCI6MjA4ODA5MzczMn0.Gxgr1t8vhcYJ9QYSGd8veIAuwTWGIDr3hJSRNcIZ08E</span> in this HTML file's config section.</li>
         <li>Add both as GitHub Secrets (<span class="mono">SUPABASE_URL</span>, <span class="mono">SUPABASE_ANON_KEY</span>).</li>
       </ol>
     </div>
@@ -372,8 +372,8 @@
     // ==========================================
     // CONFIGURATION
     // ==========================================
-    const SUPABASE_URL      = "YOUR_SUPABASE_URL";
-    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+    const SUPABASE_URL      = "https://wiwjptnjfrkxzrffiqlh.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpd2pwdG5qZnJreHpyZmZpcWxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MTc3MzIsImV4cCI6MjA4ODA5MzczMn0.Gxgr1t8vhcYJ9QYSGd8veIAuwTWGIDr3hJSRNcIZ08E";
 
     let supabaseClient = null;
     let isConfigured = (SUPABASE_URL !== "YOUR_SUPABASE_URL" && SUPABASE_URL.startsWith("http"));
