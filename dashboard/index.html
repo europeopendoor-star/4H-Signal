@@ -298,6 +298,10 @@
     .log-msg.ok { color: var(--green); }
     .log-msg.info { color: var(--blue); }
   </style>
+
+  <!-- Lightweight Charts -->
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+
 </head>
 <body>
 
@@ -343,9 +347,80 @@
         <li>In SQL Editor, run the table creation SQL (found in <span class="mono">supabase_writer.py</span>).</li>
         <li>Go to Settings → API and copy your Project URL & anon key.</li>
         <li>Replace <span class="mono">https://wiwjptnjfrkxzrffiqlh.supabase.co</span> and <span class="mono">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indpd2pwdG5qZnJreHpyZmZpcWxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1MTc3MzIsImV4cCI6MjA4ODA5MzczMn0.Gxgr1t8vhcYJ9QYSGd8veIAuwTWGIDr3hJSRNcIZ08E</span> in this HTML file's config section.</li>
-        <li>Add both as GitHub Secrets (<span class="mono">SUPABASE_URL</span>, <span class="mono">SUPABASE_ANON_KEY</span>).</li>
+        <li>Add as GitHub Secrets (<span class="mono">SUPABASE_URL</span>, <span class="mono">SUPABASE_ANON_KEY</span>, <span class="mono">TELEGRAM_BOT_TOKEN</span>, <span class="mono">TELEGRAM_CHAT_ID</span>, <span class="mono">TWELVEDATA_API_KEY</span>).</li>
       </ol>
     </div>
+
+
+  <!-- Live Candlestick Chart -->
+  <div class="stats-grid" id="chart-section" style="margin-top: 1rem;">
+    <div style="grid-column: 1 / -1;">
+      <h3 class="mono section-title">Live Chart</h3>
+      <div id="chart-tabs" style="display: flex; gap: 10px; margin-bottom: 10px; cursor: pointer;">
+        <span onclick="setChartPair('EURUSD')" style="font-family: monospace;">EURUSD</span>
+        <span onclick="setChartPair('GBPUSD')" style="font-family: monospace;">GBPUSD</span>
+        <span onclick="setChartPair('USDJPY')" style="font-family: monospace;">USDJPY</span>
+        <span onclick="setChartPair('AUDUSD')" style="font-family: monospace;">AUDUSD</span>
+        <span onclick="setChartPair('USDCAD')" style="font-family: monospace;">USDCAD</span>
+      </div>
+      <div id="chart-container" style="width: 100%; height: 280px; background-color: #07090e;"></div>
+    </div>
+  </div>
+
+  <!-- News Warnings -->
+  <div id="news-warning" class="log-card mono" style="display: none; border-color: var(--amber); background-color: var(--amber-dim); color: var(--amber); margin-top: 1rem; padding: 1rem;">
+    <strong>⚠ HIGH IMPACT NEWS</strong>
+    <div id="news-warning-list"></div>
+  </div>
+
+  <!-- Performance Stats -->
+  <div class="stats-grid" id="performance-section" style="margin-top: 1rem;">
+    <div style="grid-column: 1 / -1;"><h3 class="mono section-title">Strategy Performance</h3></div>
+    <div class="stat-card"><div class="stat-label">Win Rate</div><div class="stat-value" id="stat-win-rate">--</div></div>
+    <div class="stat-card"><div class="stat-label">Total R</div><div class="stat-value" id="stat-total-rr">--</div></div>
+    <div class="stat-card"><div class="stat-label">Total Pips</div><div class="stat-value" id="stat-total-pips">--</div></div>
+    <div class="stat-card"><div class="stat-label">Best Pair</div><div class="stat-value" id="stat-best-pair">--</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Score</div><div class="stat-value" id="stat-avg-score">--</div></div>
+    <div class="stat-card"><div class="stat-label">Total Trades</div><div class="stat-value" id="stat-total-trades">--</div></div>
+
+    <div style="grid-column: 1 / -1; margin-top: 1rem; font-family: monospace; background: var(--card); padding: 1rem; border-radius: 6px;">
+      <table style="width: 100%; text-align: left; border-collapse: collapse;">
+        <thead><tr style="border-bottom: 1px solid var(--border);"><th style="padding-bottom: 5px;">Pair</th><th>Signals</th><th>Win Rate</th><th>Avg R:R</th><th>Pips</th></tr></thead>
+        <tbody id="pair-stats-table"></tbody>
+      </table>
+    </div>
+
+    <div style="grid-column: 1 / -1; margin-top: 1rem; display: flex; gap: 10px; font-family: monospace;">
+        <div style="flex: 1; background: var(--card); padding: 10px; border-radius: 6px; text-align: center;">London<br><span id="session-london">--</span></div>
+        <div style="flex: 1; background: var(--card); padding: 10px; border-radius: 6px; text-align: center;">New York<br><span id="session-ny">--</span></div>
+        <div style="flex: 1; background: var(--card); padding: 10px; border-radius: 6px; text-align: center;">LDN Close<br><span id="session-ldn-close">--</span></div>
+    </div>
+  </div>
+
+  <!-- Position Sizer -->
+  <div class="stats-grid" style="margin-top: 1rem;">
+    <div style="grid-column: 1 / -1; background: var(--card); border: 1px solid var(--border); border-radius: 6px;">
+      <div style="padding: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center;" onclick="document.getElementById('sizer-content').style.display = document.getElementById('sizer-content').style.display === 'none' ? 'block' : 'none';">
+        <h3 class="mono section-title" style="margin: 0; padding: 0;">Position Sizer</h3>
+        <span class="mono" style="color: var(--text-dim)">▼</span>
+      </div>
+      <div id="sizer-content" style="display: none; padding: 1rem; border-top: 1px solid var(--border);">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin-bottom: 15px;">
+          <div><label class="mono" style="font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 4px;">Balance ($)</label><input type="number" id="sizer-balance" value="1000" class="input mono" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px;" onchange="calculateSizer()"></div>
+          <div><label class="mono" style="font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 4px;">Risk (%)</label><input type="number" id="sizer-risk" value="1" max="5" class="input mono" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px;" onchange="calculateSizer()"></div>
+          <div><label class="mono" style="font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 4px;">Pair</label><select id="sizer-pair" class="input mono" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px;" onchange="calculateSizer()"><option value="EURUSD">EURUSD</option><option value="GBPUSD">GBPUSD</option><option value="USDJPY">USDJPY</option><option value="AUDUSD">AUDUSD</option><option value="USDCAD">USDCAD</option></select></div>
+          <div><label class="mono" style="font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 4px;">Entry</label><input type="number" id="sizer-entry" step="0.00001" class="input mono" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px;" onchange="calculateSizer()"></div>
+          <div><label class="mono" style="font-size: 10px; color: var(--text-dim); display: block; margin-bottom: 4px;">SL</label><input type="number" id="sizer-sl" step="0.00001" class="input mono" style="width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); padding: 5px;" onchange="calculateSizer()"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+            <div class="stat-card" style="padding: 10px;"><div class="stat-label">Risk Amount</div><div class="mono" id="sizer-out-risk" style="color: var(--amber)">$0.00</div></div>
+            <div class="stat-card" style="padding: 10px;"><div class="stat-label">SL Distance</div><div class="mono" id="sizer-out-dist" style="color: var(--red)">0.0 pips</div></div>
+            <div class="stat-card" style="padding: 10px;"><div class="stat-label">Lot Size</div><div class="mono" id="sizer-out-lot" style="color: var(--green); font-size: 18px; font-weight: bold;">0.00</div></div>
+        </div>
+        <div style="font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 15px;" class="mono">Indicative only. Verify with your broker's calculator.</div>
+      </div>
+    </div>
+  </div>
 
     <div class="section-head">
       <h2>Live Signals</h2>
@@ -549,6 +624,275 @@
       } catch (e) {}
     }
 
+
+    let chart;
+    let candlestickSeries;
+    let activeChartPair = 'EURUSD';
+    let globalSignals = [];
+
+    function calculateSizer() {
+      const balance = parseFloat(document.getElementById('sizer-balance').value) || 0;
+      const riskPct = parseFloat(document.getElementById('sizer-risk').value) || 0;
+      const pair = document.getElementById('sizer-pair').value;
+      const entry = parseFloat(document.getElementById('sizer-entry').value) || 0;
+      const sl = parseFloat(document.getElementById('sizer-sl').value) || 0;
+
+      const riskAmount = balance * (riskPct / 100);
+      document.getElementById('sizer-out-risk').innerText = `$${riskAmount.toFixed(2)}`;
+
+      if (entry > 0 && sl > 0 && entry !== sl) {
+          const isJpy = pair.includes('JPY');
+          const multiplier = isJpy ? 100 : 10000;
+          const pipValue = pair.includes('USD') && pair.indexOf('USD') === 3 ? 10 : (isJpy ? 6.5 : 10); // Approximation
+
+          const slPips = Math.abs(entry - sl) * multiplier;
+          document.getElementById('sizer-out-dist').innerText = `${slPips.toFixed(1)} pips`;
+
+          let lotSize = riskAmount / (slPips * pipValue);
+          lotSize = Math.max(0.01, lotSize);
+          document.getElementById('sizer-out-lot').innerText = `${lotSize.toFixed(2)} lots`;
+      } else {
+          document.getElementById('sizer-out-dist').innerText = "0.0 pips";
+          document.getElementById('sizer-out-lot').innerText = "0.00 lots";
+      }
+    }
+
+    async function fetchChartData(pair) {
+      if (!TWELVEDATA_API_KEY || TWELVEDATA_API_KEY === 'demo_key') return generateDemoChartData();
+
+      const symbol = pair.substring(0, 3) + '/' + pair.substring(3);
+      const url = `https://api.twelvedata.com/time_series?symbol=${symbol}&interval=15min&outputsize=100&apikey=${TWELVEDATA_API_KEY}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status === 'error' || !data.values) return generateDemoChartData();
+
+        return data.values.reverse().map(v => ({
+            time: new Date(v.datetime).getTime() / 1000,
+            open: parseFloat(v.open),
+            high: parseFloat(v.high),
+            low: parseFloat(v.low),
+            close: parseFloat(v.close)
+        }));
+      } catch (e) {
+        return generateDemoChartData();
+      }
+    }
+
+    function generateDemoChartData() {
+        let time = Math.floor(Date.now() / 1000) - (100 * 15 * 60);
+        let currentPrice = 1.08500;
+        const data = [];
+        for(let i = 0; i < 100; i++) {
+            const open = currentPrice;
+            const close = open + (Math.random() - 0.5) * 0.0050;
+            const high = Math.max(open, close) + Math.random() * 0.0020;
+            const low = Math.min(open, close) - Math.random() * 0.0020;
+            data.push({ time, open, high, low, close });
+            currentPrice = close;
+            time += 15 * 60;
+        }
+        return data;
+    }
+
+    async function initChart(pair) {
+      const container = document.getElementById('chart-container');
+      if (chart) { chart.remove(); }
+
+      chart = LightweightCharts.createChart(container, {
+          layout: { background: { type: LightweightCharts.ColorType.Solid, color: '#07090e' }, textColor: '#546880' },
+          grid: { vertLines: { color: '#181f2e' }, horzLines: { color: '#181f2e' } },
+          crosshair: { mode: LightweightCharts.CrosshairMode.Normal, vertLine: { color: '#546880' }, horzLine: { color: '#546880' } },
+          timeScale: { timeVisible: true, secondsVisible: false }
+      });
+
+      candlestickSeries = chart.addCandlestickSeries({
+          upColor: '#05f5a0',
+          downColor: '#ff3d5a',
+          borderVisible: false,
+          wickUpColor: '#03c47e',
+          wickDownColor: '#cc2244'
+      });
+
+      const data = await fetchChartData(pair);
+      candlestickSeries.setData(data);
+
+      // Draw lines for latest signal
+      const latestSignal = globalSignals.find(s => s.pair === pair);
+      if (latestSignal) {
+          const lines = [
+              { price: latestSignal.entry_price, color: '#f5a623', title: 'Entry' },
+              { price: latestSignal.stop_loss, color: '#ff3d5a', title: 'Stop Loss' },
+              { price: latestSignal.take_profit_1, color: '#05f5a0', title: 'TP1' },
+              { price: latestSignal.take_profit_2, color: '#05f5a0', title: 'TP2', lineStyle: LightweightCharts.LineStyle.Solid }
+          ];
+
+          lines.forEach(l => {
+              if (l.price) {
+                  candlestickSeries.createPriceLine({
+                      price: l.price,
+                      color: l.color,
+                      lineWidth: 2,
+                      lineStyle: l.lineStyle || LightweightCharts.LineStyle.Dashed,
+                      axisLabelVisible: true,
+                      title: l.title
+                  });
+              }
+          });
+      }
+    }
+
+    function setChartPair(pair) {
+        activeChartPair = pair;
+        initChart(pair);
+    }
+
+    async function loadPerformanceStats() {
+        if (!isConfigured) {
+            document.getElementById('stat-win-rate').innerText = "58.3%";
+            document.getElementById('stat-win-rate').style.color = "var(--amber)";
+            document.getElementById('stat-total-rr').innerText = "+14.2r";
+            document.getElementById('stat-total-rr').style.color = "var(--green)";
+            document.getElementById('stat-total-pips').innerText = "+340.5";
+            document.getElementById('stat-total-pips').style.color = "var(--green)";
+            document.getElementById('stat-best-pair').innerText = "EURUSD";
+            document.getElementById('stat-avg-score').innerText = "6.8";
+            document.getElementById('stat-total-trades').innerText = "24";
+            document.getElementById('pair-stats-table').innerHTML = `<tr><td style="padding: 5px 0;">EURUSD</td><td>12</td><td style="color: var(--green);">66.7%</td><td>1.4r</td><td>+180.2</td></tr><tr><td style="padding: 5px 0;">GBPUSD</td><td>8</td><td style="color: var(--amber);">50.0%</td><td>1.1r</td><td>+80.0</td></tr><tr><td style="padding: 5px 0;">USDJPY</td><td>4</td><td style="color: var(--red);">25.0%</td><td>0.8r</td><td>-20.0</td></tr>`;
+            document.getElementById('session-london').innerHTML = '60%<br><small>10</small>';
+            document.getElementById('session-ny').innerHTML = '58%<br><small>12</small>';
+            document.getElementById('session-ldn-close').innerHTML = '50%<br><small>2</small>';
+            return;
+        }
+
+        try {
+            const { data, error } = await supabaseClient.from('signals').select('outcome, actual_rr, pips_gained, pair, session, confluence_score').neq('outcome', 'open');
+            if (error || !data || data.length < 10) {
+                document.getElementById('stat-win-rate').innerText = "Need 10+ trades";
+                document.getElementById('stat-win-rate').style.fontSize = "12px";
+                return;
+            }
+
+            let wins = 0; let totalRR = 0; let totalPips = 0; let totalScore = 0;
+            const pairStats = {}; const sessionStats = {};
+
+            data.forEach(s => {
+                if (s.outcome === 'win') wins++;
+                totalRR += parseFloat(s.actual_rr || 0);
+                totalPips += parseFloat(s.pips_gained || 0);
+                if (s.outcome === 'win') totalScore += parseInt(s.confluence_score || 0);
+
+                if (!pairStats[s.pair]) pairStats[s.pair] = { count: 0, wins: 0, rr: 0, pips: 0 };
+                pairStats[s.pair].count++;
+                if (s.outcome === 'win') pairStats[s.pair].wins++;
+                pairStats[s.pair].rr += parseFloat(s.actual_rr || 0);
+                pairStats[s.pair].pips += parseFloat(s.pips_gained || 0);
+
+                const sess = s.session || 'Unknown';
+                if (!sessionStats[sess]) sessionStats[sess] = { count: 0, wins: 0 };
+                sessionStats[sess].count++;
+                if (s.outcome === 'win') sessionStats[sess].wins++;
+            });
+
+            const winRate = (wins / data.length) * 100;
+            const wrEl = document.getElementById('stat-win-rate');
+            wrEl.innerText = `${winRate.toFixed(1)}%`;
+            wrEl.style.color = winRate > 60 ? "var(--green)" : (winRate >= 50 ? "var(--amber)" : "var(--red)");
+
+            const rrEl = document.getElementById('stat-total-rr');
+            rrEl.innerText = `${totalRR > 0 ? '+' : ''}${totalRR.toFixed(1)}r`;
+            rrEl.style.color = totalRR > 0 ? "var(--green)" : "var(--red)";
+
+            const pipsEl = document.getElementById('stat-total-pips');
+            pipsEl.innerText = `${totalPips > 0 ? '+' : ''}${totalPips.toFixed(1)}`;
+            pipsEl.style.color = totalPips > 0 ? "var(--green)" : "var(--red)";
+
+            document.getElementById('stat-avg-score').innerText = wins > 0 ? (totalScore / wins).toFixed(1) : "0.0";
+            document.getElementById('stat-total-trades').innerText = data.length;
+
+            // Populate table
+            const tableRows = Object.keys(pairStats).map(p => {
+                const ps = pairStats[p];
+                const pwr = (ps.wins / ps.count) * 100;
+                const pColor = pwr > 60 ? "var(--green)" : (pwr >= 50 ? "var(--amber)" : "var(--red)");
+                return `<tr><td style="padding: 5px 0;">${p}</td><td>${ps.count}</td><td style="color: ${pColor};">${pwr.toFixed(1)}%</td><td>${(ps.rr/ps.count).toFixed(1)}r</td><td>${ps.pips.toFixed(1)}</td></tr>`;
+            }).sort((a,b) => {
+                const wrA = parseFloat(a.match(/([0-9]+\.[0-9]+)%/)[1]);
+                const wrB = parseFloat(b.match(/([0-9]+\.[0-9]+)%/)[1]);
+                return wrB - wrA;
+            });
+
+            document.getElementById('pair-stats-table').innerHTML = tableRows.join('');
+
+            const bestPair = Object.keys(pairStats).reduce((best, p) => {
+                const wr = pairStats[p].wins / pairStats[p].count;
+                if (pairStats[p].count >= 5 && wr > best.wr) return { p, wr };
+                return best;
+            }, { p: '--', wr: 0 });
+            document.getElementById('stat-best-pair').innerText = bestPair.p;
+
+            // Sessions
+            ['London', 'New York', 'LDN Close'].forEach(sess => {
+                const stat = sessionStats[sess] || { count: 0, wins: 0 };
+                const swr = stat.count > 0 ? ((stat.wins / stat.count) * 100).toFixed(0) : 0;
+                const idMap = { 'London': 'session-london', 'New York': 'session-ny', 'LDN Close': 'session-ldn-close' };
+                document.getElementById(idMap[sess]).innerHTML = `${swr}%<br><small>${stat.count}</small>`;
+            });
+
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    async function fetchNewsWarnings() {
+        if (!TWELVEDATA_API_KEY || TWELVEDATA_API_KEY === 'demo_key') {
+            document.getElementById('news-warning').style.display = 'block';
+            document.getElementById('news-warning-list').innerHTML = `🕐 NFP in 45min · USD pairs paused`;
+            return;
+        }
+
+        const today = new Date().toISOString().split('T')[0];
+        const url = `https://api.twelvedata.com/economic_calendar?start_date=${today}&end_date=${today}&importance=High&apikey=${TWELVEDATA_API_KEY}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+
+            if (data.events && data.events.length > 0) {
+                const now = new Date();
+                let hasWarnings = false;
+                let msgs = [];
+
+                data.events.forEach(ev => {
+                    const evTime = new Date(`${ev.date}T${ev.time}Z`); // assuming UTC
+                    const diffMins = (evTime - now) / 60000;
+
+                    if (diffMins > 0 && diffMins <= 120) {
+                        hasWarnings = true;
+                        msgs.push(`🕐 ${ev.event} in ${Math.round(diffMins)}min · ${ev.currency} pairs paused`);
+
+                        if (diffMins <= 30) {
+                            document.getElementById('news-warning').style.borderColor = 'var(--red)';
+                            document.getElementById('news-warning').style.backgroundColor = '#2a0a0f';
+                            document.getElementById('news-warning').style.color = 'var(--red)';
+                            msgs.push(`<strong>TRADING PAUSED</strong>`);
+                        }
+                    }
+                });
+
+                if (hasWarnings) {
+                    document.getElementById('news-warning').style.display = 'block';
+                    document.getElementById('news-warning-list').innerHTML = msgs.join('<br>');
+                } else {
+                    document.getElementById('news-warning').style.display = 'none';
+                }
+            }
+        } catch (e) {
+            console.error("News fetch error", e);
+        }
+    }
+
     async function loadSignals() {
       if (!isConfigured) return;
 
@@ -587,7 +931,15 @@
       supabaseClient.channel('public:signals')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, payload => {
           addLog(`New signal detected: ${payload.new.pair}`, "info");
-          loadSignals();
+
+      loadSignals();
+      initChart(activeChartPair);
+      loadPerformanceStats();
+      fetchNewsWarnings();
+      setInterval(loadPerformanceStats, 300000);
+      setInterval(fetchNewsWarnings, 1800000);
+      setInterval(() => initChart(activeChartPair), 60000);
+
           loadBotStatus();
         })
         .subscribe();
@@ -603,7 +955,15 @@
 
       if (isConfigured) {
         supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        loadSignals();
+
+      loadSignals();
+      initChart(activeChartPair);
+      loadPerformanceStats();
+      fetchNewsWarnings();
+      setInterval(loadPerformanceStats, 300000);
+      setInterval(fetchNewsWarnings, 1800000);
+      setInterval(() => initChart(activeChartPair), 60000);
+
         subscribeRealtime();
         loadBotStatus();
         setInterval(loadBotStatus, 60000);
