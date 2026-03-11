@@ -81,6 +81,12 @@ def scan_all():
         print(f"Error updating bot status: {e}")
 
     try:
+        from signal_tracker import run_tracker
+        run_tracker()
+    except Exception as e:
+        print(f"Error running signal tracker: {e}")
+
+    try:
         clean_old_signals(days_to_keep=14)
     except Exception as e:
         print(f"Error cleaning old signals: {e}")

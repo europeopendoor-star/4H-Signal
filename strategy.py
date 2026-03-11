@@ -540,6 +540,11 @@ def run_strategy_scan(df_4h: pd.DataFrame, df_15m: pd.DataFrame, df_daily: pd.Da
     if enforce_kill_zone and session == "Other":
         return signals
 
+    is_blackout, reason = news_filter.is_news_blackout(pair)
+    if is_blackout:
+        print(f"  📰 {pair} blocked — news blackout: {reason}")
+        return []
+
     daily_bias = get_daily_bias(df_daily)
     zones = detect_large_4h_candle(df_4h.tail(10))
 
