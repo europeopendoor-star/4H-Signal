@@ -17,6 +17,8 @@ ALTER TABLE signals ADD COLUMN IF NOT EXISTS pips_gained NUMERIC;
 """
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import time
 import requests
 from datetime import datetime, timezone, timedelta

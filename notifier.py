@@ -7,6 +7,8 @@ Uses the Telegram Bot API to send trade signals.
 
 import os
 import requests
+from dotenv import load_dotenv
+load_dotenv()
 from strategy import TradeSignal, Direction
 
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
@@ -100,3 +102,21 @@ Kill Zones: London (07–10 UTC) · NY (12–16 UTC)"""
         print("Startup message sent to Telegram.")
     except Exception as e:
         print(f"Error sending Telegram startup message: {e}")
+
+def send_telegram_message(message: str):
+    """Sends a raw text message to Telegram."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"Error sending Telegram message: {e}")

@@ -7,6 +7,8 @@ Fallback source: yfinance.
 """
 
 import os
+from dotenv import load_dotenv
+load_dotenv()
 import time
 import requests
 import yfinance as yf
