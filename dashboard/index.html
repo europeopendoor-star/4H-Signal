@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabaseClient.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <style>
     :root {
@@ -555,7 +555,7 @@
       document.getElementById('liveText').innerText = "SYNCING...";
 
       try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('signals')
           .select('*')
           .order('created_at', { ascending: false })
@@ -602,7 +602,7 @@
       setInterval(tick, 1000);
 
       if (isConfigured) {
-        supabaseClient = window.supabaseClient.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         loadSignals();
         subscribeRealtime();
         loadBotStatus();
