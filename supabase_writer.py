@@ -125,11 +125,11 @@ def keep_alive_ping():
 
 def clean_old_signals(days_to_keep=14):
     """Deletes old signals to prevent database bloat."""
+    import urllib.parse
     cutoff = (datetime.now(timezone.utc) - timedelta(days=days_to_keep)).isoformat()
-
-    url = f"{_table_url('signals')}?created_at=lt.{cutoff}"
+    encoded_cutoff = urllib.parse.quote(cutoff)
+    url = f"{_table_url('signals')}?created_at=lt.{encoded_cutoff}"
     headers = _headers()
-
     try:
         response = requests.delete(url, headers=headers)
         response.raise_for_status()
