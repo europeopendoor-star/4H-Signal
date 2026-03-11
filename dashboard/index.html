@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  GitHub Secrets required to run this bot fully:
+    1. SUPABASE_URL
+    2. SUPABASE_ANON_KEY
+    3. TELEGRAM_BOT_TOKEN
+    4. TELEGRAM_CHAT_ID
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>4H Signal Bot</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Syne:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabaseClient.min.js"></script>
+
+  <style>
+    :root {
+      --bg: #07090e;
+      --bg2: #0c0f18;
+      --bg3: #111520;
+      --panel: #0e1219;
+      --border: #181f2e;
+      --green: #05f5a0;
+      --green2: #03c47e;
+      --gdim: rgba(5,245,160,0.07);
+      --red: #ff3d5a;
+      --red2: #cc2244;
+      --rdim: rgba(255,61,90,0.07);
+      --amber: #ffb800;
+      --adim: rgba(255,184,0,0.08);
+      --blue: #4d8dff;
+      --text: #b8cce0;
+      --text2: #546880;
+      --text3: #2a3a4e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      position: relative;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-image:
+        linear-gradient(var(--green) 1px, transparent 1px),
+        linear-gradient(90deg, var(--green) 1px, transparent 1px);
+      background-size: 48px 48px;
+      opacity: 0.01;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 70px 16px 32px;
+    }
+
+    .mono { font-family: 'IBM Plex Mono', monospace; }
+
+    /* --- HEADER --- */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 54px;
+      background: rgba(12, 15, 24, 0.9);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+    }
+    .header-inner {
+      width: 100%;
+      max-width: 640px;
+      padding: 0 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 800;
+      color: #fff;
+      font-size: 16px;
+      letter-spacing: -0.5px;
+    }
+    .logo svg { width: 20px; height: 20px; color: var(--green); }
+    .logo sup { color: var(--green); font-size: 10px; font-weight: 700; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 11px;
+    }
+    .pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    .dot { width: 6px; height: 6px; border-radius: 50%; }
+    .dot.live { background: var(--green); animation: pulse 2s infinite; }
+    .dot.offline { background: var(--text3); }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(5,245,160,0.4); }
+      70% { transform: scale(1); opacity: 0.8; box-shadow: 0 0 0 6px rgba(5,245,160,0); }
+      100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(5,245,160,0); }
+    }
+
+    /* --- STATS ROW --- */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      text-align: center;
+    }
+    .stat-val { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+    .stat-lbl { font-size: 10px; color: var(--text2); text-transform: uppercase; }
+    #stSig { color: var(--green); }
+    #stRR { color: var(--amber); }
+    #stScore { color: var(--blue); }
+    #stScan { color: var(--text); font-size: 14px; margin-top: 4px;}
+
+    /* --- SETUP BANNER --- */
+    #setupBanner {
+      display: none;
+      background: var(--adim);
+      border: 1px solid var(--amber);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    #setupBanner h3 { color: var(--amber); font-size: 14px; margin-bottom: 12px; }
+    #setupBanner ol { margin-left: 20px; font-size: 13px; color: var(--text); line-height: 1.6; }
+    #setupBanner li { margin-bottom: 6px; }
+    .setup-code {
+      display: block; background: var(--bg); border: 1px solid var(--border);
+      padding: 8px; margin: 8px 0; border-radius: 4px; font-size: 11px;
+      color: #fff; overflow-x: auto;
+    }
+
+    /* --- SECTION HEADERS --- */
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      margin-top: 32px;
+    }
+    .section-head h2 { font-size: 14px; color: #fff; }
+    .btn {
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text); padding: 4px 10px; border-radius: 4px;
+      font-size: 11px; cursor: pointer; transition: all 0.2s;
+    }
+    .btn:hover { background: var(--border); color: #fff; }
+
+    /* --- SIGNAL CARDS --- */
+    .signals-container { display: flex; flex-direction: column; gap: 16px; }
+
+    .empty-state {
+      text-align: center; padding: 48px 0; color: var(--text3);
+    }
+    .empty-state svg { width: 48px; height: 48px; opacity: 0.2; margin-bottom: 16px; }
+
+    .sig-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeInUp 0.5s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .sig-head {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid var(--border);
+    }
+    .sig-pair {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dir-chip {
+      padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;
+    }
+    .dir-bull { background: var(--gdim); color: var(--green); border: 1px solid rgba(5,245,160,0.2); }
+    .dir-bear { background: var(--rdim); color: var(--red); border: 1px solid rgba(255,61,90,0.2); }
+    .pair-name { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+
+    .sig-meta { text-align: right; }
+    .conf-pill {
+      display: inline-block; padding: 2px 8px; border-radius: 12px;
+      font-size: 10px; font-weight: 700; margin-bottom: 4px;
+    }
+    .conf-high { background: var(--adim); color: var(--amber); border: 1px solid rgba(255,184,0,0.2); }
+    .conf-med { background: rgba(77,141,255,0.1); color: var(--blue); border: 1px solid rgba(77,141,255,0.2); }
+    .sig-time { font-size: 11px; color: var(--text2); }
+
+    .sig-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .grid-cell {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .grid-cell:nth-child(odd) { border-right: 1px solid var(--border); }
+
+    .cell-lbl { font-size: 10px; color: var(--text2); margin-bottom: 8px; text-transform: uppercase; }
+    .cell-val { font-size: 15px; color: #fff; }
+
+    .val-ote { color: var(--amber); line-height: 1.4; }
+    .val-rr { color: var(--amber); font-size: 24px; font-weight: 600; }
+    .val-sl { color: var(--red); }
+    .val-tp { color: var(--green); line-height: 1.4; }
+
+    .sig-score {
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .score-bar-bg {
+      flex: 1; height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%; width: 0; transition: width 1s ease-out;
+    }
+
+    .sig-flags {
+      padding: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      background: var(--bg2);
+    }
+    .flag {
+      font-size: 10px; padding: 4px 8px; border-radius: 4px;
+      background: var(--bg3); border: 1px solid var(--border);
+      display: flex; align-items: center; gap: 4px;
+    }
+    .flag.pass { color: var(--text); border-color: rgba(5,245,160,0.2); }
+    .flag.fail { color: var(--text3); text-decoration: line-through; }
+    .flag.pass::before { content: '✓'; color: var(--green); }
+    .flag.fail::before { content: '×'; color: var(--text3); }
+
+    /* --- LOGS --- */
+    .sys-log {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px;
+      max-height: 150px; overflow-y: auto;
+      font-size: 11px; color: var(--text2);
+    }
+    .log-line { margin-bottom: 4px; }
+    .log-time { color: var(--text3); margin-right: 8px; }
+    .log-msg.error { color: var(--red); }
+    .log-msg.warn { color: var(--amber); }
+    .log-msg.ok { color: var(--green); }
+    .log-msg.info { color: var(--blue); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z"/></svg>
+        4H Signal <sup>V2</sup>
+      </div>
+      <div class="header-right mono">
+        <div class="pill" id="sessionPill"><div class="dot"></div><span id="sessionText">--</span></div>
+        <div class="pill" id="livePill"><div class="dot offline" id="liveDot"></div><span id="liveText">OFFLINE</span></div>
+        <div id="utcClock">--:--:--</div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+
+    <div class="stats-row mono">
+      <div class="stat-card">
+        <div class="stat-val" id="stSig">-</div>
+        <div class="stat-lbl">Signals Today</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stRR">-</div>
+        <div class="stat-lbl">Avg R:R</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stScore">-</div>
+        <div class="stat-lbl">Avg Score</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val" id="stScan">-</div>
+        <div class="stat-lbl">Last Scan</div>
+      </div>
+    </div>
+
+    <div id="setupBanner">
+      <h3>⚠ SUPABASE SETUP REQUIRED</h3>
+      <ol>
+        <li>Go to <b>supabase.com</b> and create a free project.</li>
+        <li>In SQL Editor, run the table creation SQL (found in <span class="mono">supabase_writer.py</span>).</li>
+        <li>Go to Settings → API and copy your Project URL & anon key.</li>
+        <li>Replace <span class="mono">YOUR_SUPABASE_URL</span> and <span class="mono">YOUR_SUPABASE_ANON_KEY</span> in this HTML file's config section.</li>
+        <li>Add both as GitHub Secrets (<span class="mono">SUPABASE_URL</span>, <span class="mono">SUPABASE_ANON_KEY</span>).</li>
+      </ol>
+    </div>
+
+    <div class="section-head">
+      <h2>Live Signals</h2>
+      <button class="btn mono" onclick="loadSignals()">↻ Refresh</button>
+    </div>
+
+    <div class="signals-container" id="sigContainer">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z"/></svg>
+        <div>No signals yet</div>
+      </div>
+    </div>
+
+    <div class="section-head">
+      <h2>System Log</h2>
+      <button class="btn mono" onclick="document.getElementById('sysLog').innerHTML=''">Clear</button>
+    </div>
+
+    <div class="sys-log mono" id="sysLog"></div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // CONFIGURATION
+    // ==========================================
+    const SUPABASE_URL      = "YOUR_SUPABASE_URL";
+    const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY";
+
+    let supabaseClient = null;
+    let isConfigured = (SUPABASE_URL !== "YOUR_SUPABASE_URL" && SUPABASE_URL.startsWith("http"));
+
+    // ==========================================
+    // UTILS
+    // ==========================================
+    function utcStr() {
+      const now = new Date();
+      return now.toISOString().substr(11, 8);
+    }
+
+    function addLog(msg, type = "info") {
+      const logBox = document.getElementById('sysLog');
+      const div = document.createElement('div');
+      div.className = 'log-line';
+      div.innerHTML = `<span class="log-time">[${utcStr()}]</span> <span class="log-msg ${type}">${msg}</span>`;
+      logBox.prepend(div);
+    }
+
+    function timeAgo(isoStr) {
+      if (!isoStr) return "--";
+      const diff = Math.floor((new Date() - new Date(isoStr)) / 1000);
+      if (diff < 60) return `${diff}s ago`;
+      const m = Math.floor(diff / 60);
+      if (m < 60) return `${m}m ago`;
+      const h = Math.floor(m / 60);
+      return `${h}h ago`;
+    }
+
+    function fmt(price, pair) {
+      if (!price) return "0.00000";
+      return pair.includes("JPY") ? Number(price).toFixed(3) : Number(price).toFixed(5);
+    }
+
+    // ==========================================
+    // TIME & SESSION
+    // ==========================================
+    function getSession() {
+      const hour = new Date().getUTCHours();
+      if (hour >= 7 && hour < 10) return "LONDON";
+      if (hour >= 12 && hour < 16) return "NEW YORK";
+      if (hour >= 15 && hour < 17) return "LDN CLOSE";
+      return null;
+    }
+
+    function tick() {
+      document.getElementById('utcClock').innerText = utcStr();
+
+      const sess = getSession();
+      const st = document.getElementById('sessionText');
+      const sdot = document.querySelector('#sessionPill .dot');
+
+      if (sess) {
+        st.innerText = sess;
+        sdot.className = "dot live";
+      } else {
+        st.innerText = "OFF-HOURS";
+        sdot.className = "dot offline";
+      }
+    }
+
+    // ==========================================
+    // RENDERING
+    // ==========================================
+    function renderCard(s, idx) {
+      const isBull = s.direction === "bullish";
+      const dirCls = isBull ? "dir-bull" : "dir-bear";
+      const dirTxt = isBull ? "▲ BUY" : "▼ SELL";
+
+      const confCls = s.confidence === "HIGH" ? "conf-high" : "conf-med";
+      const confTxt = s.confidence === "HIGH" ? "🔥 HIGH" : "⚡ MED";
+
+      const scorePct = (s.confluence_score / 8) * 100;
+      const scoreColor = s.confidence === "HIGH" ? "var(--green)" : "var(--amber)";
+
+      const f = typeof s.flags === 'string' ? JSON.parse(s.flags) : (s.flags || {});
+
+      const makeFlag = (key, lbl) => {
+        const pass = f[key];
+        return `<div class="flag ${pass ? 'pass' : 'fail'}">${lbl}</div>`;
+      };
+
+      return `
+        <div class="sig-card" style="animation-delay: ${idx * 0.1}s">
+          <div class="sig-head">
+            <div class="sig-pair">
+              <div class="dir-chip ${dirCls}">${dirTxt}</div>
+              <div class="pair-name">${s.pair}</div>
+            </div>
+            <div class="sig-meta">
+              <div class="conf-pill ${confCls}">${confTxt}</div>
+              <div class="sig-time">${timeAgo(s.created_at)} · ${s.session}</div>
+            </div>
+          </div>
+
+          <div class="sig-grid mono">
+            <div class="grid-cell">
+              <div class="cell-lbl">Entry Zone (OTE)</div>
+              <div class="cell-val val-ote">
+                ${fmt(s.entry_low, s.pair)}<br>
+                ${fmt(s.entry_high, s.pair)}
+              </div>
+            </div>
+            <div class="grid-cell">
+              <div class="cell-lbl">R:R Ratio</div>
+              <div class="cell-val val-rr">1:${s.risk_reward}</div>
+            </div>
+            <div class="grid-cell">
+              <div class="cell-lbl">Stop Loss</div>
+              <div class="cell-val val-sl">${fmt(s.stop_loss, s.pair)}</div>
+            </div>
+            <div class="grid-cell">
+              <div class="cell-lbl">Take Profit</div>
+              <div class="cell-val val-tp">
+                TP1: ${fmt(s.take_profit_1, s.pair)}<br>
+                TP2: ${fmt(s.take_profit_2, s.pair)}<br>
+                TP3: ${fmt(s.take_profit_3, s.pair)}
+              </div>
+            </div>
+          </div>
+
+          <div class="sig-score mono">
+            <div style="font-size:10px;color:var(--text2)">SCORE</div>
+            <div class="score-bar-bg">
+              <div class="score-bar-fill" style="width: ${scorePct}%; background: ${scoreColor}"></div>
+            </div>
+            <div style="font-size:12px;color:#fff">${s.confluence_score}/8</div>
+          </div>
+
+          <div class="sig-flags mono">
+            ${makeFlag('4h_candle', '4H CANDLE')}
+            ${makeFlag('liq_sweep', 'LIQ SWEEP')}
+            ${makeFlag('struct_break', 'BOS/CHoCH')}
+            ${makeFlag('fvg_entry', 'FVG')}
+            ${makeFlag('kill_zone', 'KILL ZONE')}
+            ${makeFlag('daily_bias', 'DAILY BIAS')}
+            ${makeFlag('choch', 'CHOCH')}
+            ${makeFlag('order_block', 'OB ALIGN')}
+          </div>
+        </div>
+      `;
+    }
+
+    function updateStats(signals) {
+      if (!signals || signals.length === 0) return;
+
+      let totalRR = 0;
+      let totalScore = 0;
+
+      signals.forEach(s => {
+        totalRR += parseFloat(s.risk_reward || 0);
+        totalScore += parseInt(s.confluence_score || 0);
+      });
+
+      const avgRR = (totalRR / signals.length).toFixed(1);
+      const avgScore = (totalScore / signals.length).toFixed(1);
+
+      document.getElementById('stRR').innerText = `1:${avgRR}`;
+      document.getElementById('stScore').innerText = `${avgScore}/8`;
+    }
+
+    // ==========================================
+    // SUPABASE DATA
+    // ==========================================
+    async function loadBotStatus() {
+      try {
+        const { data, error } = await supabaseClient.from('bot_status').select('*').eq('id', 1).single();
+        if (data) {
+          document.getElementById('stSig').innerText = data.signals_today || 0;
+          document.getElementById('stScan').innerText = timeAgo(data.last_scan);
+        }
+      } catch (e) {}
+    }
+
+    async function loadSignals() {
+      if (!isConfigured) return;
+
+      document.getElementById('liveText').innerText = "SYNCING...";
+
+      try {
+        const { data, error } = await supabase
+          .from('signals')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        if (error) throw error;
+
+        const c = document.getElementById('sigContainer');
+        if (data.length === 0) {
+          c.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><path d="M12 2l8.66 5v10L12 22l-8.66-5V7L12 2z"/></svg><div>No signals yet</div></div>`;
+        } else {
+          c.innerHTML = data.map((s, i) => renderCard(s, i)).join('');
+          updateStats(data);
+        }
+
+        addLog(`Loaded ${data.length} signals.`, "ok");
+
+        document.getElementById('liveText').innerText = "LIVE";
+        document.getElementById('liveDot').className = "dot live";
+
+      } catch (err) {
+        addLog(err.message, "error");
+        document.getElementById('liveText').innerText = "ERROR";
+        document.getElementById('liveDot').className = "dot offline";
+      }
+    }
+
+    function subscribeRealtime() {
+      supabaseClient.channel('public:signals')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'signals' }, payload => {
+          addLog(`New signal detected: ${payload.new.pair}`, "info");
+          loadSignals();
+          loadBotStatus();
+        })
+        .subscribe();
+      addLog("Subscribed to real-time updates.", "ok");
+    }
+
+    // ==========================================
+    // INIT
+    // ==========================================
+    document.addEventListener("DOMContentLoaded", () => {
+      tick();
+      setInterval(tick, 1000);
+
+      if (isConfigured) {
+        supabaseClient = window.supabaseClient.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        loadSignals();
+        subscribeRealtime();
+        loadBotStatus();
+        setInterval(loadBotStatus, 60000);
+      } else {
+        document.getElementById('setupBanner').style.display = 'block';
+        addLog("Running in Demo Mode. Supabase config required.", "warn");
+
+        // Load Demo Data
+        const demoSignals = [
+          {
+            pair: "EURUSD", direction: "bullish", confidence: "HIGH", confluence_score: 7, risk_reward: 2.9,
+            session: "London", created_at: new Date().toISOString(),
+            entry_low: 1.08380, entry_high: 1.08440, stop_loss: 1.08210,
+            take_profit_1: 1.08582, take_profit_2: 1.08850, take_profit_3: 1.08768,
+            flags: { '4h_candle':true, 'liq_sweep':true, 'struct_break':true, 'fvg_entry':true, 'kill_zone':true, 'daily_bias':true, 'choch':true, 'order_block':false }
+          },
+          {
+            pair: "USDJPY", direction: "bearish", confidence: "MEDIUM", confluence_score: 5, risk_reward: 1.9,
+            session: "NewYork", created_at: new Date(Date.now() - 3600000).toISOString(),
+            entry_low: 149.750, entry_high: 149.830, stop_loss: 150.080,
+            take_profit_1: 149.520, take_profit_2: 149.100, take_profit_3: 149.239,
+            flags: { '4h_candle':true, 'liq_sweep':true, 'struct_break':true, 'fvg_entry':true, 'kill_zone':true, 'daily_bias':false, 'choch':false, 'order_block':false }
+          }
+        ];
+
+        document.getElementById('sigContainer').innerHTML = demoSignals.map((s, i) => renderCard(s, i)).join('');
+        document.getElementById('stSig').innerText = "2";
+        updateStats(demoSignals);
+        document.getElementById('stScan').innerText = "Just now";
+      }
+    });
+  </script>
+</body>
+</html>
